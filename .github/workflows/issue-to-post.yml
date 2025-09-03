@@ -20,6 +20,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Convert Issue to Post
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           mkdir -p _posts
           DATE=$(date -u +"%Y-%m-%d")
@@ -31,7 +33,7 @@ jobs:
             echo "categories: issue"
             echo "---"
             echo ""
-            echo "${{ github.event.issue.body }}"
+            echo "$ISSUE_BODY"
           } > $FILENAME
 
       - name: Commit and push
