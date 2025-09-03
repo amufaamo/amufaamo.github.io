@@ -1,0 +1,35 @@
+name: Issue to Post
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Convert Issue to Post
+        run: |
+          mkdir -p _posts
+          DATE=$(date -u +"%Y-%m-%d")
+          FILENAME="_posts/${DATE}-issue-${{ github.event.issue.number }}.md"
+          echo "---" > $FILENAME
+          echo "title: \"${{ github.event.issue.title }}\"" >> $FILENAME
+          echo "date: $(date -u +"%Y-%m-%d %H:%M:%S %z")" >> $FILENAME
+          echo "categories: issue" >> $FILENAME
+          echo "---" >> $FILENAME
+          echo "" >> $FILENAME
+          echo "${{ github.event.issue.body }}" >> $FILENAME
+    
+      - name: Commit and push
+        run: |
+          git add _posts/
+          git commit -m "Add post from issue #${{ github.event.issue.number }}"
+          git push
