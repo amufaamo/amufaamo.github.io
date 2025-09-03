@@ -5,7 +5,7 @@ on:
     types: [opened, edited]
 
 permissions:
-  contents: write   # ← これを追加
+  contents: write
 
 jobs:
   build:
@@ -32,12 +32,13 @@ jobs:
             echo "---"
             echo ""
             cat <<'EOF'
-      ${{ github.event.issue.body }}
-      EOF
+${{ github.event.issue.body }}
+EOF
           } > $FILENAME
-    
+
       - name: Commit and push
         run: |
           git add _posts/
           git commit -m "Add post from issue #${{ github.event.issue.number }}"
           git push
+
