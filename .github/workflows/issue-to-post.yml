@@ -4,6 +4,9 @@ on:
   issues:
     types: [opened, edited]
 
+permissions:
+  contents: write   # ← これを追加
+
 jobs:
   build:
     runs-on: ubuntu-latest
