@@ -31,9 +31,7 @@ jobs:
             echo "categories: issue"
             echo "---"
             echo ""
-            cat <<'EOF'
-${{ github.event.issue.body }}
-EOF
+            echo "${{ github.event.issue.body }}"
           } > $FILENAME
 
       - name: Commit and push
@@ -41,4 +39,3 @@ EOF
           git add _posts/
           git commit -m "Add post from issue #${{ github.event.issue.number }}"
           git push
-
