@@ -7,7 +7,6 @@ on:
 jobs:
   post-to-blogger:
     runs-on: ubuntu-latest
-    # Google Cloudへの認証のために、このpermissions設定が必要です
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -17,51 +16,62 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Write issue body to a markdown file
-        run: echo "${{ github.event.issue.body }}" > issue.md
+        # 安全にファイルに書き出すために、環境変数を経由させます
+        run: echo "$ISSUE_BODY" > issue.md
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
 
-      # --- ここからが新しい処理です！ ---
-
-      # 1. pandocをインストールします
       - name: Install pandoc
         run: |
           sudo apt-get update
           sudo apt-get install -y pandoc
 
-      # 2. pandocでMarkdownをHTMLに変換します
       - name: Convert Markdown to HTML
         run: pandoc issue.md -f markdown -t html -o post.html
+      
+      # 【デバッグ用】変換されたHTMLの中身を確認します
+      - name: Show HTML content for debugging
+        run: |
+          echo "--- HTML Content Preview ---"
+          cat post.html
+          echo "--------------------------"
 
-      # 3. Google Cloudに安全に認証します
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
+      - name: Authenticate to Google Cloud
+        id: 'auth'
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
-      # 4. curlコマンドでBloggerに投稿します
-      - name: Post to Blogger
+      # 4. JSONデータを作成してBloggerに投稿します（改善版）
+      - name: Create JSON and Post to Blogger
         run: |
-          # 投稿内容（HTML）に改行や記号が含まれていても大丈夫なように、Pythonで安全なJSONデータを作成します
-          # この部分は複雑に見えますが、安全に投稿するためのおまじないだと思ってください
-          BODY_JSON=$(python -c '
-          import json, os
-          # 環境変数からIssueのタイトルとHTMLファイルの内容を読み込みます
-          title = os.getenv("ISSUE_TITLE")
+          # デバッグのために実行コマンドをログに表示します
+          set -x
+
+          # Pythonスクリプトをファイルとして作成します
+          cat << 'EOF' > create_payload.py
+          import json, os, sys
+          # タイトルをコマンドの引数から安全に受け取ります
+          issue_title = sys.argv[1]
           html_content = open("post.html").read()
-          # Blogger APIが求める形式でデータ（payload）を作ります
           payload = {
-              "title": title,
+              "title": issue_title,
               "content": html_content
           }
-          # 作成したデータをJSON形式で出力します
           print(json.dumps(payload))
-          ')
+          EOF
+
+          # Pythonスクリプトを実行して、投稿データ(JSON)を作成します
+          BODY_JSON=$(python create_payload.py "${{ github.event.issue.title }}")
+          
+          # 【デバッグ用】作成されたJSONの中身を確認します
+          echo "--- JSON Payload Preview ---"
+          echo "$BODY_JSON"
+          echo "--------------------------"
 
           # curlを使ってBlogger APIにPOSTリクエストを送ります
-          curl -X POST \
+          curl --fail -X POST \
             -H "Authorization: Bearer ${{ steps.auth.outputs.access_token }}" \
             -H "Content-Type: application/json" \
             -d "$BODY_JSON" \
-            "https://www.googleapis.com/blogger/v3/blogs/${{ secrets.BLOGGER_BLOG_ID }}/posts/"
-        env:
-          ISSUE_TITLE: ${{ github.event.issue.title }}
+            "https://www.googleapis.com/blogger/v3/blogs/${{ secrets.BLOGGER_BLOG_ID }}/posts/?isDraft=false"
