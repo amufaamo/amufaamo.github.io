@@ -1,0 +1,38 @@
+name: Create Blogger Post from Issue
+
+# 【変更点①】Issueが"作られた(opened)"ときに実行するように変更！
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  post-to-blogger:
+    # 【変更点②】ラベルの条件(if)を削除！
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+
+    steps:
+      # ステップ1: Issueの本文（Markdown）をファイルに書き出すよ
+      - name: Write issue body to a markdown file
+        run: |
+          echo "${{ github.event.issue.body }}" > issue.md
+        shell: bash
+
+      # ステップ2: MarkdownファイルをHTMLに変換するよ
+      - name: Convert Markdown to HTML
+        id: md-to-html
+        uses: athul/markdown-to-html@v1.3
+        with:
+          markdown_file: "issue.md"
+          output_html_file: "post.html"
+
+      # ステップ3: 変換したHTMLをBloggerに投稿するよ！
+      - name: Post content to Blogger
+        uses: masaki-mag/blogger-post-action@v1.1.0
+        with:
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          blog_id: ${{ secrets.BLOGGER_BLOG_ID }}
+          title: ${{ github.event.issue.title }}
+          content_file: "post.html"
+          is_draft: false
