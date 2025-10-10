@@ -4,6 +4,7 @@ import sitemap from '@astrojs/sitemap'
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://astro-base.netlify.app',
+  site: 'https://christham.net',
+  base: '/astro-base/',
   integrations: [UnoCSS(), sitemap()]
 })
