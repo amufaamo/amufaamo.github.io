@@ -4,7 +4,7 @@ import sitemap from '@astrojs/sitemap'
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://christham.net',
+  site: 'https://hellotham.github.io',
   base: '/astro-base/',
   integrations: [UnoCSS(), sitemap()]
 })
