@@ -5,7 +5,7 @@ on:
     types: [opened, edited]
 
 permissions:
-  contents: write # リポジトリに書き込むために必要です
+  contents: write 
 
 jobs:
   build:
@@ -14,7 +14,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # ZennとJekyllが連携している 'master' ブランチを指定します
           ref: master
 
       - name: Set up Git
@@ -30,6 +29,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
           # --- 1. Jekyllブログ用のファイルを作成 ---
+          # (ここは変更ありません)
           mkdir -p _posts
           JEKYLL_DATE=$(date -u +"%Y-%m-%d")
           JEKYLL_DATETIME=$(date -u +"%Y-%m-%d %H:%M:%S %z")
@@ -49,17 +49,21 @@ jobs:
 
           # --- 2. Zenn用のファイルを作成 ---
           mkdir -p articles
-          ZENN_FILENAME="articles/issue-${ISSUE_NUMBER}.md"
+          
+          # ★★★★★ ここを変更しました！ ★★★★★
+          # Zennの12文字ルールを満たすため、ファイル名に日付を追加します
+          ZENN_DATE=$(date -u +"%Y%m%d")
+          ZENN_FILENAME="articles/${ZENN_DATE}-issue-${ISSUE_NUMBER}.md"
+          # ★★★★★ 変更ここまで ★★★★★
           
           # Zennフロントマターの処理
           EMOJI="😊"
-          TYPE="tech" # または "idea"
+          TYPE="tech"
           PUBLISHED="false"
           if echo "$ISSUE_LABELS" | grep -q '"name":"publish"'; then
             PUBLISHED="true"
           fi
           
-          # 'publish' 以外のラベルをトピックとして抽出
           TOPICS=$(echo "$ISSUE_LABELS" | jq -c '[.[] | .name | select(. != "publish")]')
 
           {
@@ -78,14 +82,10 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          # 'master' ブランチであることを確認
           git checkout master
-          
-          # 両方のディレクトリの変更をステージング
           git add _posts/
           git add articles/
           
-          # 変更があった場合のみコミット＆プッシュ
           if ! git diff --cached --quiet; then
             git commit -m "Add/Update post and article from issue #${{ github.event.issue.number }}"
             git push
