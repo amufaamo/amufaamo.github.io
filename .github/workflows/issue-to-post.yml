@@ -29,7 +29,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
           # --- 1. Jekyllブログ用のファイルを作成 ---
-          # (ここは変更ありません)
+          # (Jekyll側は変更ありません)
           mkdir -p _posts
           JEKYLL_DATE=$(date -u +"%Y-%m-%d")
           JEKYLL_DATETIME=$(date -u +"%Y-%m-%d %H:%M:%S %z")
@@ -49,21 +49,14 @@ jobs:
 
           # --- 2. Zenn用のファイルを作成 ---
           mkdir -p articles
-          
-          # ★★★★★ ここを変更しました！ ★★★★★
-          # Zennの12文字ルールを満たすため、ファイル名に日付を追加します
           ZENN_DATE=$(date -u +"%Y%m%d")
           ZENN_FILENAME="articles/${ZENN_DATE}-issue-${ISSUE_NUMBER}.md"
-          # ★★★★★ 変更ここまで ★★★★★
           
           # Zennフロントマターの処理
           EMOJI="😊"
           TYPE="tech"
-          PUBLISHED="false"
-          if echo "$ISSUE_LABELS" | grep -q '"name":"publish"'; then
-            PUBLISHED="true"
-          fi
           
+          # 'publish' ラベルがもし付いていてもトピックにならないように除外します
           TOPICS=$(echo "$ISSUE_LABELS" | jq -c '[.[] | .name | select(. != "publish")]')
 
           {
@@ -72,7 +65,10 @@ jobs:
             echo "emoji: \"$EMOJI\""
             echo "type: \"$TYPE\""
             echo "topics: $TOPICS"
-            echo "published: $PUBLISHED"
+            # ★★★★★ ここを変更しました！ ★★★★★
+            # 'publish' ラベルのチェックをなくし、常に 'true' (公開) にします
+            echo "published: true"
+            # ★★★★★ 変更ここまで ★★★★★
             echo "---"
             echo ""
             echo "$ISSUE_BODY"
