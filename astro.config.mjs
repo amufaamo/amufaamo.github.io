@@ -5,5 +5,6 @@ import tailwind from "@astrojs/tailwind";
 
 export default defineConfig({
   site: 'https://amufaamo.github.io',
-  integrations: [mdx(), tailwind()]
+  // ここに sitemap() を追加します！順番はどこでも大丈夫です✨
+  integrations: [mdx(), sitemap(), tailwind()]
 });
