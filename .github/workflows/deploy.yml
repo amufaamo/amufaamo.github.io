@@ -3,6 +3,7 @@ name: Deploy Astro site to GitHub Pages
 on:
   push:
     branches: [main]
+  workflow_dispatch: # 手動実行ボタンを追加しておくと便利です
 
 permissions:
   contents: read
@@ -12,19 +13,32 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
+
+      # pnpmをセットアップ
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
 
       - uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'pnpm' # キャッシュを有効にして高速化
 
-      - run: npm install
-      - run: npm run build
+      - run: pnpm install
+      - run: pnpm run build
 
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
 
-      - uses: actions/deploy-pages@v4
+  deploy: # buildの後にdeployジョブを分けるのが標準的です
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
