@@ -3,11 +3,13 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import tailwind from "@astrojs/tailwind";
 
+// https://astro.build/config
 export default defineConfig({
-  // あなたのGitHubユーザー名に合わせてください
-  site: 'https://amufaamo.github.io', 
-  // リポジトリ名が「amufaamo.github.io」であれば '/' でOKです。
-  // もし別の名前のリポジトリなら '/リポジトリ名' にしてください。
-  base: '/', 
-  integrations: [mdx(), sitemap(), tailwind()]
+  // 末尾の記号などを含めず、正確に記述します
+  site: 'https://amufaamo.github.io',
+  integrations: [
+    mdx(), 
+    sitemap(), // sitemapがsite情報を正しく参照できるようにします
+    tailwind()
+  ],
 });
